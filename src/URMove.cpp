@@ -13,7 +13,8 @@ URMove::URMove(){
 URMove::~URMove(){
     
 }
-void URMove::setup(){
+void URMove::setup(const string& modelFile)
+{
     float min = FLT_MIN;
     float max = FLT_MAX;
     movementParams.setName("UR Movements");
@@ -30,7 +31,7 @@ void URMove::setup(){
     
     for(int i = 0; i < 8; i++){
         previews.push_back(new UR5KinematicModel());
-        previews.back()->setup();
+        previews.back()->setup(modelFile);
     }
     
     selectedSolution = -1;
@@ -184,7 +185,7 @@ int URMove::selectSolution(){
                 max = count[i];
             }
         }
-        ofLog(OF_LOG_VERBOSE)<<"nearest "<<nearest<<endl;
+        ofLog(OF_LOG_VERBOSE)<<"nearest "<<nearest;
         //        if(inversePosition.size() >= 7)
         //            return nearest;
         //        else
@@ -238,7 +239,7 @@ void URMove::urKinematics(ofMatrix4x4 input){
                 if(preInversePosition.size() > 0){
                     if(i == selectedSolution){
                         if(preInversePosition[i][j]-inversePosition.getBack()[i][j] > PI){
-                            ofLog(OF_LOG_WARNING)<<"JOINT WRAPS SOL "<<ofToString(i)<<" Joint "<<ofToString(j)<<endl;
+                            ofLog(OF_LOG_WARNING)<<"JOINT WRAPS SOL "<<ofToString(i)<<" Joint "<<ofToString(j);
                         }
                     }
                 }
@@ -260,7 +261,10 @@ void URMove::urKinematics(ofMatrix4x4 input){
 }
 
 ofMatrix4x4 URMove::forwardKinematics(vector<double> pose){
-    return forwardKinematics(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
+	if (pose.size() == currentPose.size()) {
+		return forwardKinematics(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
+	}
+	return ofMatrix4x4::newIdentityMatrix();
 }
 
 ofMatrix4x4 URMove::forwardKinematics(double o, double t, double th, double f, double fi, double s){

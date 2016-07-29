@@ -17,7 +17,7 @@ class URMove {
 public:
     URMove();
     ~URMove();
-    void setup();
+    void setup(const std::string& modelFile);
     void update();
     void draw(int i);
     void computeVelocities();

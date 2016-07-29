@@ -18,8 +18,11 @@
 
 #include "ur_driver.h"
 
-UrDriver::UrDriver(std::condition_variable& rt_msg_cond,
-		std::condition_variable& msg_cond, std::string host,
+using namespace std;
+using namespace chrono;
+
+UrDriver::UrDriver(condition_variable& rt_msg_cond,
+		condition_variable& msg_cond, string host,
 		unsigned int reverse_port, double servoj_time,
 		unsigned int safety_count_max, double max_time_step, double min_payload,
 		double max_payload) :
@@ -42,9 +45,9 @@ UrDriver::UrDriver(std::condition_variable& rt_msg_cond,
 
 	incoming_sockfd_ = socket(AF_INET, SOCK_STREAM, 0);
 	if (incoming_sockfd_ < 0) {
-        ofLog()<<"ERROR opening socket for reverse communication"<<endl;
+        ofLog()<<"ERROR opening socket for reverse communication";
 	}
-	bzero((char *) &serv_addr, sizeof(serv_addr));
+	memset((char *) &serv_addr, 0, sizeof(serv_addr));
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -52,18 +55,18 @@ UrDriver::UrDriver(std::condition_variable& rt_msg_cond,
 	flag = 1;
 	setsockopt(incoming_sockfd_, IPPROTO_TCP, TCP_NODELAY, (char *) &flag,
 			sizeof(int));
-	setsockopt(incoming_sockfd_, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int));
+	setsockopt(incoming_sockfd_, SOL_SOCKET, SO_REUSEADDR, (char*) &flag, sizeof(int));
     bind(incoming_sockfd_, (struct sockaddr *) &serv_addr,
          sizeof(serv_addr));
 	
 	listen(incoming_sockfd_, 5);
 }
 
-std::vector<double> UrDriver::interp_cubic(double t, double T,
-		std::vector<double> p0_pos, std::vector<double> p1_pos,
-		std::vector<double> p0_vel, std::vector<double> p1_vel) {
+vector<double> UrDriver::interp_cubic(double t, double T,
+		vector<double> p0_pos, vector<double> p1_pos,
+		vector<double> p0_vel, vector<double> p1_vel) {
 	/*Returns positions of the joints at time 't' */
-	std::vector<double> positions;
+	vector<double> positions;
 	for (unsigned int i = 0; i < p0_pos.size(); i++) {
 		double a = p0_pos[i];
 		double b = p0_vel[i];
@@ -76,39 +79,38 @@ std::vector<double> UrDriver::interp_cubic(double t, double T,
 	return positions;
 }
 
-bool UrDriver::doTraj(std::vector<double> inp_timestamps,
-		std::vector<std::vector<double> > inp_positions,
-		std::vector<std::vector<double> > inp_velocities) {
-	std::chrono::high_resolution_clock::time_point t0, t;
-	std::vector<double> positions;
+bool UrDriver::doTraj(vector<double> inp_timestamps,
+		vector<vector<double> > inp_positions,
+		vector<vector<double> > inp_velocities) {
+	high_resolution_clock::time_point t0, t;
+	vector<double> positions;
 	unsigned int j;
 
 	if (!UrDriver::uploadProg()) {
 		return false;
 	}
 	executing_traj_ = true;
-	t0 = std::chrono::high_resolution_clock::now();
+	t0 = high_resolution_clock::now();
 	t = t0;
 	j = 0;
-	while ((inp_timestamps[inp_timestamps.size() - 1]
-			>= std::chrono::duration_cast<std::chrono::duration<double>>(t - t0).count())
-			and executing_traj_) {
+	while ((inp_timestamps[inp_timestamps.size() - 1] >= duration_cast<duration<double>>(t - t0).count())
+			&& executing_traj_) {
 		while (inp_timestamps[j]
-				<= std::chrono::duration_cast<std::chrono::duration<double>>(
+				<= duration_cast<duration<double>>(
 						t - t0).count() && j < inp_timestamps.size() - 1) {
 			j += 1;
 		}
 		positions = UrDriver::interp_cubic(
-				std::chrono::duration_cast<std::chrono::duration<double>>(
+				duration_cast<duration<double>>(
 						t - t0).count() - inp_timestamps[j - 1],
 				inp_timestamps[j] - inp_timestamps[j - 1], inp_positions[j - 1],
 				inp_positions[j], inp_velocities[j - 1], inp_velocities[j]);
 		UrDriver::servoj(positions);
 
 		// oversample with 4 * sample_time
-		std::this_thread::sleep_for(
-				std::chrono::milliseconds((int) ((servoj_time_ * 1000) / 4.)));
-		t = std::chrono::high_resolution_clock::now();
+		this_thread::sleep_for(
+				milliseconds((int) ((servoj_time_ * 1000) / 4.)));
+		t = high_resolution_clock::now();
 	}
 	executing_traj_ = false;
 	//Signal robot to stop driverProg()
@@ -116,16 +118,16 @@ bool UrDriver::doTraj(std::vector<double> inp_timestamps,
 	return true;
 }
 
-void UrDriver::servoj(std::vector<double> positions, int keepalive) {
+void UrDriver::servoj(vector<double> positions, int keepalive) {
 	if (!reverse_connected_) {
 		print_error(
 				"UrDriver::servoj called without a reverse connection present. Keepalive: "
-						+ std::to_string(keepalive));
+						+ to_string(keepalive));
 		return;
 	}
 	unsigned int bytes_written;
 	int tmp;
-	unsigned char buf[28];
+	char buf[28];
 	for (int i = 0; i < 6; i++) {
 		tmp = htonl((int) (positions[i] * MULT_JOINTSTATE_));
 		buf[i * 4] = tmp & 0xff;
@@ -138,7 +140,7 @@ void UrDriver::servoj(std::vector<double> positions, int keepalive) {
 	buf[6 * 4 + 1] = (tmp >> 8) & 0xff;
 	buf[6 * 4 + 2] = (tmp >> 16) & 0xff;
 	buf[6 * 4 + 3] = (tmp >> 24) & 0xff;
-	bytes_written = write(new_sockfd_, buf, 28);
+	bytes_written = send(new_sockfd_, buf, 28, 0);
 }
 
 void UrDriver::stopTraj() {
@@ -147,7 +149,7 @@ void UrDriver::stopTraj() {
 }
 
 bool UrDriver::uploadProg() {
-	std::string cmd_str;
+	string cmd_str;
 	char buf[128];
 	cmd_str = "def driverProg():\n";
 
@@ -230,34 +232,34 @@ bool UrDriver::openServo() {
 	new_sockfd_ = accept(incoming_sockfd_, (struct sockaddr *) &cli_addr,
 			&clilen);
 	if (new_sockfd_ < 0) {
-        ofLog()<<"ERROR on accepting reverse communication"<<endl;
+        ofLog()<<"ERROR on accepting reverse communication";
 		return false;
     }else{
-       ofLog()<<"Connected reverse communication"<<endl; 
+       ofLog()<<"Connected reverse communication"; 
     }
 	reverse_connected_ = true;
 	return true;
 }
-void UrDriver::closeServo(std::vector<double> positions) {
+void UrDriver::closeServo(vector<double> positions) {
 	if (positions.size() != 6)
 		UrDriver::servoj(rt_interface_->robot_state_->getQActual(), 0);
 	else
 		UrDriver::servoj(positions, 0);
 
 	reverse_connected_ = false;
-	close(new_sockfd_);
+	CloseSocket(new_sockfd_);
 }
 
 bool UrDriver::start() {
 	if (!sec_interface_->start())
 		return false;
-    firmware_version_ = 1.0;
+    firmware_version_ = 3.3;
 	rt_interface_->robot_state_->setVersion(firmware_version_);
 	if (!rt_interface_->start())
 		return false;
 	ip_addr_ = rt_interface_->getLocalIp();
 	print_debug(
-			"Listening on " + ip_addr_ + ":" + std::to_string(REVERSE_PORT_)
+			"Listening on " + ip_addr_ + ":" + to_string(REVERSE_PORT_)
 					+ "\n");
 	return true;
 
@@ -269,7 +271,7 @@ void UrDriver::halt() {
 	}
 	sec_interface_->halt();
 	rt_interface_->halt();
-	close(incoming_sockfd_);
+	CloseSocket(incoming_sockfd_);
 }
 
 void UrDriver::setSpeed(double q0, double q1, double q2, double q3, double q4,
@@ -277,11 +279,11 @@ void UrDriver::setSpeed(double q0, double q1, double q2, double q3, double q4,
 	rt_interface_->setSpeed(q0, q1, q2, q3, q4, q5, acc);
 }
 
-std::vector<std::string> UrDriver::getJointNames() {
+vector<string> UrDriver::getJointNames() {
 	return joint_names_;
 }
 
-void UrDriver::setJointNames(std::vector<std::string> jn) {
+void UrDriver::setJointNames(vector<string> jn) {
 	joint_names_ = jn;
 }
 

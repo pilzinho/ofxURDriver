@@ -75,10 +75,14 @@ bool RobotStateRT::getControllerUpdated() {
 }
 
 double RobotStateRT::ntohd(uint64_t nf) {
+#ifdef TARGET_WIN32
+	return ::ntohd(nf);
+#else
 	double x;
 	nf = be64toh(nf);
 	memcpy(&x, &nf, sizeof(x));
 	return x;
+#endif
 }
 
 std::vector<double> RobotStateRT::unpackVector(uint8_t * buf, int start_index,
@@ -389,7 +393,12 @@ void RobotStateRT::unpack(uint8_t * buf) {
 	offset += sizeof(double) * 6;
 
 	memcpy(&digital_input_bits, &buf[offset], sizeof(digital_input_bits));
-	digital_input_bits_ = unpackDigitalInputBits(be64toh(digital_input_bits));
+#ifdef TARGET_WIN32
+	digital_input_bits = ntohll(digital_input_bits);
+#else
+	digital_input_bits = be64toh(digital_input_bits);
+#endif 
+	digital_input_bits_ = unpackDigitalInputBits(digital_input_bits);
 	offset += sizeof(double);
 	motor_temperatures_ = unpackVector(buf, offset, 6);
 	offset += sizeof(double) * 6;

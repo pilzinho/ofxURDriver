@@ -18,21 +18,35 @@
 
 #include "robot_state.h"
 
+#include <ofConstants.h>
+#ifdef TARGET_WIN32
+#include <WinSock2.h>
+#else
+#include <netinet/in.h>
+#include "endian.h"
+#endif
 
-RobotState::RobotState(std::condition_variable& msg_cond) {
+
+RobotState::RobotState(const std::condition_variable& msg_cond) {
 	version_msg_.major_version = 0;
 	version_msg_.minor_version = 0;
 	new_data_available_ = false;
-	pMsg_cond_ = &msg_cond;
+	pMsg_cond_ = (condition_variable*)&msg_cond;
 	RobotState::setDisconnected();
 	robot_mode_running_ = robotStateTypeV30::ROBOT_MODE_RUNNING;
 }
+
 double RobotState::ntohd(uint64_t nf) {
+#ifdef TARGET_WIN32
+	return ::ntohd(nf);
+#else
 	double x;
 	nf = be64toh(nf);
 	memcpy(&x, &nf, sizeof(x));
 	return x;
+#endif
 }
+
 void RobotState::unpack(uint8_t* buf, unsigned int buf_length) {
 	/* Returns missing bytes to unpack a message, or 0 if all data was parsed */
 	unsigned int offset = 0;

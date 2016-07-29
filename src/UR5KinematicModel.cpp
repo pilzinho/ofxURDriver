@@ -7,40 +7,38 @@
 //
 
 #include "UR5KinematicModel.h"
+
+#define MODULE_NAME "UR5KinematicModel"
+using namespace std;
+
 UR5KinematicModel::UR5KinematicModel(){
     
 }
 UR5KinematicModel::~UR5KinematicModel(){
     
 }
-void UR5KinematicModel::setup(){
+bool UR5KinematicModel::setup(const string& modelName){
     
     
 //    world.setup();
 //    world.disableGrabbing();
 //    world.setGravity( ofVec3f(0, 0, 0) );
 
-    
-    ofDirectory dir;
-    dir.listDir(ofToDataPath("models"));
-    dir.sort();
-    dir.allowExt("dae");
-    
+	string modelPath = ofToDataPath(modelName);
     // load robot mesh
-    loader.loadModel(ofToDataPath("models/ur5.dae"));
+	if (!loader.loadModel(ofToDataPath(modelPath))) {
+		ofLogError(MODULE_NAME) << "Failed to setup model";
+		return false;
+	}
     for(int i = 0; i < loader.getNumMeshes(); i++){
         meshs.push_back(loader.getMesh(i));
     }
-    
 
-    
-    
-    //    joints.setup(vector<Joint>());
-    vector<double> foo;
-    foo.assign(6, 0.0);
-    jointsRaw.setup(foo);
-    toolPointRaw.setup(foo);
-    jointsProcessed.setup(foo);
+    vector<double> zeroAngles;
+    zeroAngles.assign(6, 0.0);
+    jointsRaw.setup(zeroAngles);
+    toolPointRaw.setup(zeroAngles);
+    jointsProcessed.setup(zeroAngles);
     
     joints.resize(6);
     nodes.resize(6);
@@ -64,8 +62,6 @@ void UR5KinematicModel::setup(){
         
     }
     tool.offset =joints[5].offset;
-    
-    
     
     joints[0].axis.set(0, 0, 1);
     joints[1].axis.set(0, -1, 0);
@@ -105,8 +101,6 @@ void UR5KinematicModel::setup(){
     
     tcpNode.setParent(nodes[5]);
     tcpNode.setPosition(ofVec3f(0.0, -0.2, 0.0)*1000);
-    
-    
     tool.rotation =joints[5].rotation;
     
     shader.load("shaders/model");
@@ -118,7 +112,7 @@ void UR5KinematicModel::setup(){
     jointsProcessed.swapBack();
     jointsRaw.swapBack();
     toolPointRaw.swapBack();
-    
+	return true;
 }
 
 ofQuaternion UR5KinematicModel::getToolPointQuaternion(){

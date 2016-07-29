@@ -18,15 +18,12 @@
 
 #ifndef ROBOT_STATE_H_
 #define ROBOT_STATE_H_
-
 #include <inttypes.h>
 #include <vector>
 #include <stdlib.h>
 #include <string.h>
 #include <mutex>
 #include <condition_variable>
-#include <netinet/in.h>
-#include "endian.h"
 
 namespace message_types {
 enum message_type {
@@ -164,7 +161,7 @@ private:
 	double ntohd(uint64_t nf);
 
 public:
-	RobotState(std::condition_variable& msg_cond);
+	RobotState(const std::condition_variable& msg_cond);
 	~RobotState();
 	double getVersion();
 	double getTime();

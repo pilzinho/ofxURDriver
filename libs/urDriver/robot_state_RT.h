@@ -24,9 +24,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <mutex>
-#include <netinet/in.h>
 #include <condition_variable>
+
+#ifndef TARGET_WIN32
 #include "endian.h"
+#include <netinet/in.h>
+#else
+#include <WinSock2.h>
+#endif
 
 class RobotStateRT {
 private:

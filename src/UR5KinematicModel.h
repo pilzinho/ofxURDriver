@@ -23,7 +23,7 @@ class UR5KinematicModel{
 public:
     UR5KinematicModel();
     ~UR5KinematicModel();
-    void setup();
+    bool setup(const std::string& modelName);
     void update();
     void draw(float stage = 3.0);
     void setToolMesh(ofMesh mesh);

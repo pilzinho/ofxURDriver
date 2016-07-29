@@ -25,21 +25,27 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/time.h>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <sys/types.h>
+#include <iostream>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/types.h>
+
+#ifndef TARGET_WIN32
+#include <sys/time.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netdb.h>
-#include <iostream>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <sys/types.h>
+#else
+#include <Ws2tcpip.h>
+#include <WinSock2.h>
+#endif
 
 class UrRealtimeCommunication {
 private:
@@ -68,7 +74,7 @@ public:
 	void setSpeed(double q0, double q1, double q2, double q3, double q4,
 			double q5, double acc = 100.);
 	void addCommandToQueue(std::string inp);
-	void setSafetyCountMax(uint inp);
+	void setSafetyCountMax(unsigned int inp);
 	std::string getLocalIp();
 
 };

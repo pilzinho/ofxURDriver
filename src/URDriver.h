@@ -18,6 +18,7 @@ public:
     ~ofxURDriver();
     void setup(string ipAddress, double minPayload = 0.0, double maxPayload = 1.0);
     void start();
+	bool isStarted();
     void disconnect();
     void stopThread();
     void setToolOffset(ofVec3f localPos);

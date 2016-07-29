@@ -8,6 +8,8 @@
 
 #include "URDriver.h"
 
+#define MODULE_NAME "ofxURDriver"
+
 ofxURDriver::ofxURDriver(){
     currentSpeed.assign(6, 0.0);
     acceleration = 0.0;
@@ -21,7 +23,6 @@ void ofxURDriver::setup(string ipAddress, double minPayload, double maxPayload){
     robot = new UrDriver(rt_msg_cond_,
                          msg_cond_, ipAddress);
     
-    char buf[256];
     vector<string> foo = robot->getJointNames();
     std::string joint_prefix = "ur_";
     std::vector<std::string> joint_names;
@@ -40,18 +41,22 @@ void ofxURDriver::setup(string ipAddress, double minPayload, double maxPayload){
     double max_payload = maxPayload;
     robot->setMinPayload(min_payload);
     robot->setMaxPayload(max_payload);
-    sprintf(buf, "Bounds for set_payload service calls: [%f, %f]",
-            min_payload, max_payload);
-    ofLog(OF_LOG_NOTICE)<<buf;
-    model.setup();
+	ofLogNotice(MODULE_NAME, "Bounds for set_payload service calls: [%f, %f]",	min_payload, max_payload);
     bStarted = false;
 }
+
 void ofxURDriver::start(){
-    ofLog(OF_LOG_NOTICE)<<"Starting ofxURDriver Controller"<<endl;
+    ofLogNotice(MODULE_NAME) << "Starting controller ...";
     startThread();
 }
 
-void ofxURDriver::stopThread(){
+
+bool ofxURDriver::isStarted()
+{
+	return bStarted;
+}
+
+void ofxURDriver::stopThread() {
     if(bStarted){
         disconnect();
         ofThread::stopThread();
@@ -169,9 +174,9 @@ void ofxURDriver::threadedFunction(){
         if(!bStarted){
             bStarted = robot->start();
             if(bStarted){
-                ofLog(OF_LOG_NOTICE)<<"Robot Started"<<endl;
+				ofLogNotice(MODULE_NAME) << "Robot connected";
             }else{
-                ofLog(OF_LOG_ERROR)<<"Rboto Not Started"<<endl;
+				ofLogError(MODULE_NAME) << "Robot not connected";
             }
         }else{
             bDataReady = false;
@@ -194,7 +199,6 @@ void ofxURDriver::threadedFunction(){
                 model.joints[i].rotation.makeRotate(model.jointsProcessed.getBack()[i], model.joints[i].axis);
                 model.dtoolPoint.rotation*=model.joints[i].rotation;
             }
-            
             
             //this is returning weird shit that doesn't return the same values.
             
