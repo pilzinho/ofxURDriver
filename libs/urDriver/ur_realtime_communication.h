@@ -67,7 +67,7 @@ public:
 	bool connected_;
 	RobotStateRT* robot_state_;
 
-	UrRealtimeCommunication(std::condition_variable& msg_cond, std::string host,
+	UrRealtimeCommunication(std::condition_variable& msg_cond, const std::string& host, const unsigned int port = 30003,
 			unsigned int safety_count_max = 12);
 	bool start();
 	void halt();

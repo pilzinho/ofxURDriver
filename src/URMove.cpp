@@ -261,7 +261,7 @@ void URMove::urKinematics(ofMatrix4x4 input){
 }
 
 ofMatrix4x4 URMove::forwardKinematics(vector<double> pose){
-	if (pose.size() == currentPose.size()) {
+	if (pose.size() > 0 && pose.size() == currentPose.size()) {
 		return forwardKinematics(pose[0], pose[1], pose[2], pose[3], pose[4], pose[5]);
 	}
 	return ofMatrix4x4::newIdentityMatrix();

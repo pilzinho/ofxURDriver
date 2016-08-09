@@ -20,8 +20,9 @@
 #include "ur_communication.h"
 
 UrRealtimeCommunication::UrRealtimeCommunication(
-		std::condition_variable& msg_cond, std::string host,
-		unsigned int safety_count_max) {
+		std::condition_variable& msg_cond, const std::string& host,
+		const unsigned int port /*=30003*/,
+		unsigned int safety_count_max/*=12*/) {
     robot_state_ = new RobotStateRT(msg_cond);
 	memset((char *) &serv_addr_, 0, sizeof(serv_addr_));
 	sockfd_ = socket(AF_INET, SOCK_STREAM, 0);
@@ -34,7 +35,7 @@ UrRealtimeCommunication::UrRealtimeCommunication(
 	}
 	serv_addr_.sin_family = AF_INET;
 	memcpy((char *)&serv_addr_.sin_addr.s_addr, (char *)server_->h_addr, server_->h_length);
-	serv_addr_.sin_port = htons(30003);
+	serv_addr_.sin_port = htons(port);
 	flag_ = 1;
 	setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, (char *) &flag_, sizeof(int));
 	setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, (char *) &flag_, sizeof(int));
@@ -126,8 +127,7 @@ void UrRealtimeCommunication::run() {
 			select(sockfd_ + 1, &readfds, NULL, NULL, &timeout);
 			bytes_read = recv(sockfd_, (char*) buf, 2048, 0);
 			if (bytes_read > 0) {
-				setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, (char *) &flag_,
-						sizeof(int));
+				setsockopt(sockfd_, IPPROTO_TCP, TCP_NODELAY, (char *) &flag_, sizeof(int));
 				robot_state_->unpack(buf);
 				if (safety_count_ == safety_count_max_) {
 					setSpeed(0., 0., 0., 0., 0., 0.);

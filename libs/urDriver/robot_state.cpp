@@ -103,8 +103,7 @@ void RobotState::unpackRobotMessage(uint8_t * buf, unsigned int offset,
 
 }
 
-void RobotState::unpackRobotState(uint8_t * buf, unsigned int offset,
-		uint32_t len) {
+void RobotState::unpackRobotState(uint8_t * buf, unsigned int offset, uint32_t len) {
 	offset += 5;
 	while (offset < len) {
 		int32_t length;

@@ -58,11 +58,12 @@ class UrCommunication {
 	public:
 	RobotState* robot_state_;
 
-	UrCommunication(const std::condition_variable& msg_cond, const std::string& host);
+	UrCommunication(const std::condition_variable& msg_cond, const std::string& host, const int port = 30001);
 	bool start();
 	void halt();
 private:
 	std::string host;
+	int port;
 	ofxTCPClient firstClient;// , secClient;
 	//int pri_sockfd_, sec_sockfd_;
 	//struct sockaddr_in pri_serv_addr_, sec_serv_addr_;

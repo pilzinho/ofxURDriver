@@ -44,11 +44,11 @@ public:
 	UrRealtimeCommunication* rt_interface_;
 	UrCommunication* sec_interface_;
 
-	UrDriver(std::condition_variable& rt_msg_cond,
-			std::condition_variable& msg_cond, std::string host,
-			unsigned int reverse_port = 50007, double servoj_time = 0.016, unsigned int safety_count_max =
-					12, double max_time_step = 0.08, double min_payload = 0.,
-			double max_payload = 1.);
+	UrDriver(std::condition_variable& rt_msg_cond, std::condition_variable& msg_cond, 
+		const std::string& host, const unsigned int port = 30001,const unsigned int realtimePort = 30003,
+		unsigned int reverse_port = 50007, double servoj_time = 0.016, unsigned int safety_count_max = 12, 
+		double max_time_step = 0.08, double min_payload = 0., double max_payload = 1.);
+
 	bool start();
 	void halt();
 

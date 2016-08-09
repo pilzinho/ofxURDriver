@@ -51,12 +51,14 @@ void SetNonBlocking(const int socket, const bool nonBlocking)
 
 //--------------------------------------------------------------------------------------
 
-UrCommunication::UrCommunication(const std::condition_variable& msg_cond, const std::string& _host) 
+UrCommunication::UrCommunication(const std::condition_variable& msg_cond, const std::string& _host, 
+	const int _port /*=30001*/) 
  : host(_host)
+ , port (_port)
  , keepalive_(false)
  {
 	robot_state_ = new RobotState(msg_cond);
-	firstClient.setup(host, 30001);
+	firstClient.setup(host, port);
 	//secClient.setup(host, 30002);
 }
 
@@ -113,7 +115,6 @@ void UrCommunication::run() {
 //                ofLog()<<robot_state_->getTime();
 			} else {
                 ofLog(OF_LOG_ERROR)<<"disconnect";
-				connected_ = false;
 				robot_state_->setDisconnected();
 				firstClient.close();
 			}
@@ -121,14 +122,13 @@ void UrCommunication::run() {
 		if (keepalive_) {
 			//reconnect
 			ofLogError(MODULE_NAME)<<"Secondary port: No connection. Is controller crashed? Will try to reconnect in 10 seconds...";
-			if (!firstClient.setup(host, 30001)) {
+			if (!firstClient.setup(host, port)) {
 				ofLogError(MODULE_NAME)<<"Failed opening secondary socket";
 			}
 			else {
 				if (!firstClient.isConnected()) {
-					ofLogError(MODULE_NAME)<<"Error re-connecting to port 30002. Is controller started? Will try to reconnect in 10 seconds...";
+					ofLogError(MODULE_NAME, "Error re-connecting to port %i. Is controller started? Will try to reconnect in 10 seconds...", port);
 				} else {
-					connected_ = true;
 					ofLogNotice(MODULE_NAME)<<"Secondary port: Reconnected";
 				}
 			}

@@ -22,26 +22,28 @@ using namespace std;
 using namespace chrono;
 
 UrDriver::UrDriver(condition_variable& rt_msg_cond,
-		condition_variable& msg_cond, string host,
-		unsigned int reverse_port, double servoj_time,
-		unsigned int safety_count_max, double max_time_step, double min_payload,
-		double max_payload) :
-		REVERSE_PORT_(reverse_port), maximum_time_step_(max_time_step), minimum_payload_(
-				min_payload), maximum_payload_(max_payload), servoj_time_(
-				servoj_time) {
+	condition_variable& msg_cond, const string& host, const unsigned int port,
+	const unsigned int realtimePort,
+	unsigned int reverse_port, double servoj_time,
+	unsigned int safety_count_max, double max_time_step, double min_payload,
+	double max_payload) 
+	:
+	REVERSE_PORT_(reverse_port), maximum_time_step_(max_time_step), minimum_payload_(
+		min_payload), maximum_payload_(max_payload), servoj_time_(
+			servoj_time) 
+{
 	char buffer[256];
 	struct sockaddr_in serv_addr;
 	int n, flag;
-            
-            
+
+
 
 	firmware_version_ = 0;
 	reverse_connected_ = false;
 	executing_traj_ = false;
-	rt_interface_ = new UrRealtimeCommunication(rt_msg_cond, host,
-			safety_count_max);
+	rt_interface_ = new UrRealtimeCommunication(rt_msg_cond, host, realtimePort, safety_count_max);
 	new_sockfd_ = -1;
-	sec_interface_ = new UrCommunication(msg_cond, host);
+	sec_interface_ = new UrCommunication(msg_cond, host, port);
 
 	incoming_sockfd_ = socket(AF_INET, SOCK_STREAM, 0);
 	if (incoming_sockfd_ < 0) {
@@ -253,7 +255,7 @@ void UrDriver::closeServo(vector<double> positions) {
 bool UrDriver::start() {
 	if (!sec_interface_->start())
 		return false;
-    firmware_version_ = 3.3;
+	firmware_version_ = sec_interface_->robot_state_->getVersion();
 	rt_interface_->robot_state_->setVersion(firmware_version_);
 	if (!rt_interface_->start())
 		return false;
